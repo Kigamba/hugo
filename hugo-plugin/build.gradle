@@ -1,42 +1,82 @@
-apply plugin: 'groovy'
-apply plugin: 'nexus'
 
-
-targetCompatibility = JavaVersion.VERSION_1_7
-sourceCompatibility = JavaVersion.VERSION_1_7
-
-dependencies {
-  compile gradleApi()
-  compile localGroovy()
-  compile 'com.android.tools.build:gradle:1.3.1'
-  compile 'org.aspectj:aspectjtools:1.8.6'
-  compile 'org.aspectj:aspectjrt:1.8.6'
+buildscript {
+  repositories {
+    google()
+    mavenCentral()
+  }
 }
 
-modifyPom {
-  project {
-    name "Hugo Plugin"
-    description POM_DESCRIPTION
-    url POM_URL
+allprojects {
+  repositories {
+    mavenCentral()
+    google()
+    mavenLocal()
+  }
+}
 
-    scm {
-      url POM_SCM_URL
-      connection POM_SCM_CONNECTION
-      developerConnection POM_SCM_DEV_CONNECTION
-    }
+apply plugin: 'groovy'
+apply plugin: 'maven-publish'
 
-    licenses {
-      license {
-        name POM_LICENCE_NAME
-        url POM_LICENCE_URL
-        distribution POM_LICENCE_DIST
-      }
-    }
 
-    developers {
-      developer {
-        id POM_DEVELOPER_ID
-        name POM_DEVELOPER_NAME
+targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_1_8
+
+dependencies {
+  implementation gradleApi()
+  implementation localGroovy()
+
+  implementation 'com.android.tools.build:gradle:7.0.4'
+  implementation 'org.aspectj:aspectjtools:1.9.1'
+  implementation 'org.aspectj:aspectjrt:1.9.1'
+}
+
+/*
+task androidSourcesJar(type: Jar) {
+  archiveClassifier.set('sources')
+  if (project.plugins.findPlugin("com.android.library")) {
+    // For android libraries
+    from android.sourceSets.main.java.srcDirs
+    from android.sourceSets.main.kotlin.srcDirs
+  } else {
+    // For pure kotlin libraries, in case you have them
+    from sourceSets.main.java.srcDirs
+    from sourceSets.main.kotlin.srcDirs
+  }
+}
+artifacts {
+  archives androidSourcesJar
+}
+*/
+
+publishing {
+  publications {
+    release(MavenPublication) {
+      pom {
+        from components.java
+        name = "Hugo Plugin"
+        description = POM_DESCRIPTION
+        url = POM_URL
+
+        scm {
+          url = POM_SCM_URL
+          connection = POM_SCM_CONNECTION
+          developerConnection = POM_SCM_DEV_CONNECTION
+        }
+
+        licenses {
+          license {
+            name = POM_LICENCE_NAME
+            url = POM_LICENCE_URL
+            distribution = POM_LICENCE_DIST
+          }
+        }
+
+        developers {
+          developer {
+            id = POM_DEVELOPER_ID
+            name = POM_DEVELOPER_NAME
+          }
+        }
       }
     }
   }

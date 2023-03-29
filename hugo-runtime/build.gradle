@@ -3,13 +3,13 @@ import org.aspectj.bridge.MessageHandler
 import org.aspectj.tools.ajc.Main
 
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
+//apply plugin: 'com.github.dcendents.android-maven'
 
 dependencies {
-  compile 'org.aspectj:aspectjrt:1.8.6'
-  compile project(':hugo-annotations')
+  implementation 'org.aspectj:aspectjrt:1.9.1'
+  implementation project(':hugo-annotations')
 
-  testCompile 'junit:junit:4.12'
+  testImplementation 'junit:junit:4.12'
 }
 
 android {
@@ -17,17 +17,21 @@ android {
   buildToolsVersion rootProject.ext.buildToolsVersion
 
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_1_7
-    targetCompatibility JavaVersion.VERSION_1_7
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+  defaultConfig {
+    minSdk 7
   }
 }
 
 android.libraryVariants.all { variant ->
   JavaCompile javaCompile = variant.javaCompile
   javaCompile.doLast {
-    String[] args = [
+
+    String[] javaArgs = [
         "-showWeaveInfo",
-        "-1.5",
+        "-1.8",
         "-inpath", javaCompile.destinationDir.toString(),
         "-aspectpath", javaCompile.classpath.asPath,
         "-d", javaCompile.destinationDir.toString(),
@@ -35,8 +39,18 @@ android.libraryVariants.all { variant ->
         "-bootclasspath", android.bootClasspath.join(File.pathSeparator)
     ]
 
+    String[] kotlinArgs = [
+            "-showWeaveInfo",
+            "-1.8",
+            "-inpath", project.buildDir.path + "/tmp/kotlin-classes/debug",// + fullName,
+            "-aspectpath", javaCompile.classpath.asPath,
+            "-d", project.buildDir.path + "/tmp/kotlin-classes/debug",// + fullName,
+            "-classpath", javaCompile.classpath.asPath,
+            "-bootclasspath", project.android.bootClasspath.join(File.pathSeparator)]
+
     MessageHandler handler = new MessageHandler(true);
-    new Main().run(args, handler)
+    new Main().run(javaArgs, handler)
+    new Main().run(kotlinArgs, handler)
 
     def log = project.logger
     for (IMessage message : handler.getMessages(null, true)) {
@@ -53,6 +67,43 @@ android.libraryVariants.all { variant ->
         case IMessage.DEBUG:
           log.debug message.message, message.thrown
           break;
+      }
+    }
+  }
+}
+
+
+afterEvaluate {
+  publishing {
+    publications {
+      maven(MavenPublication) {
+        pom {
+          from components.release
+          name = "Hugo Runtime"
+          description = POM_DESCRIPTION
+          url = POM_URL
+
+          scm {
+            url = POM_SCM_URL
+            connection = POM_SCM_CONNECTION
+            developerConnection = POM_SCM_DEV_CONNECTION
+          }
+
+          licenses {
+            license {
+              name = POM_LICENCE_NAME
+              url = POM_LICENCE_URL
+              distribution = POM_LICENCE_DIST
+            }
+          }
+
+          developers {
+            developer {
+              id = POM_DEVELOPER_ID
+              name = POM_DEVELOPER_NAME
+            }
+          }
+        }
       }
     }
   }

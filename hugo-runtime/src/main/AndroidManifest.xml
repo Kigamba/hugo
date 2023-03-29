@@ -6,8 +6,5 @@
     android:versionName="1.0"
     >
 
-  <uses-sdk
-      android:minSdkVersion="7"/>
-
-  <application/>
+    <application/>
 </manifest>

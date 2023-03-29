@@ -26,10 +26,10 @@ class HugoPlugin implements Plugin<Project> {
     }
 
     project.dependencies {
-      debugCompile 'com.jakewharton.hugo:hugo-runtime:1.2.2-SNAPSHOT'
+      debugImplementation 'com.jakewharton.hugo:hugo-runtime:1.3.1-T2-SNAPSHOT'
       // TODO this should come transitively
-      debugCompile 'org.aspectj:aspectjrt:1.8.6'
-      compile 'com.jakewharton.hugo:hugo-annotations:1.2.2-SNAPSHOT'
+      debugImplementation 'org.aspectj:aspectjrt:1.9.1'
+      implementation 'com.jakewharton.hugo:hugo-annotations:1.3.0-SNAPSHOT'
     }
 
     project.extensions.create('hugo', HugoExtension)
@@ -43,21 +43,39 @@ class HugoPlugin implements Plugin<Project> {
         return;
       }
 
+      def fullName = variant.buildType.name
+
       JavaCompile javaCompile = variant.javaCompile
       javaCompile.doLast {
-        String[] args = [
+        String[] javaArgs = [
             "-showWeaveInfo",
-            "-1.5",
+            "-1.8",
             "-inpath", javaCompile.destinationDir.toString(),
             "-aspectpath", javaCompile.classpath.asPath,
             "-d", javaCompile.destinationDir.toString(),
             "-classpath", javaCompile.classpath.asPath,
             "-bootclasspath", project.android.bootClasspath.join(File.pathSeparator)
         ]
-        log.debug "ajc args: " + Arrays.toString(args)
+        log.debug "ajc args(Java): " + Arrays.toString(javaArgs)
+
+        String[] kotlinArgs = [
+                "-showWeaveInfo",
+                 "-1.8",
+                 "-inpath", project.buildDir.path + "/tmp/kotlin-classes/" + fullName,
+                 "-aspectpath", javaCompile.classpath.asPath,
+                 "-d", project.buildDir.path + "/tmp/kotlin-classes/" + fullName,
+                 "-classpath", javaCompile.classpath.asPath,
+                 "-bootclasspath", project.android.bootClasspath.join(File.pathSeparator)]
+        log.debug "ajc args(Kotlin): " + Arrays.toString(kotlinArgs)
+
+        log.debug "Full name: " + fullName
+        log.debug kotlinArgs[2]
 
         MessageHandler handler = new MessageHandler(true);
-        new Main().run(args, handler);
+
+        new Main().run(javaArgs, handler);
+        new Main().run(kotlinArgs, handler);
+
         for (IMessage message : handler.getMessages(null, true)) {
           switch (message.getKind()) {
             case IMessage.ABORT:
